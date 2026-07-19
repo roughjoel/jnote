@@ -1,0 +1,52 @@
+# Maven / Java build output
+target/
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+dependency-reduced-pom.xml
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+hs_err_pid*
+replay_pid*
+
+# IDE metadata
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+
+# Local JNote data and user notes
+notes/
+.jnote/
+
+# Generated design previews (runtime image assets under src/ are tracked)
+design/*.png
+
+# Python helper caches and environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local configuration, secrets, logs, and temporary files
+.env
+.env.*
+!.env.example
+*.log
+*.tmp
+*.bak
+*~
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">JNote logo mark</title>
+  <desc id="desc">A warm ivory lowercase j on a muted blue-gray note page with a soft sage folded corner.</desc>
+  <path fill="#718A99" d="M129 52 C89 54 61 84 59 125 L48 382 C46 426 79 459 123 459 H383 C426 459 457 428 457 386 V174 C457 151 449 132 433 115 L395 75 C378 58 357 51 334 51 Z"/>
+  <path fill="#AEBBAF" d="M353 58 L440 148 H383 C366 148 353 135 353 118 Z"/>
+  <path fill="none" stroke="#F5F1E8" stroke-width="66" stroke-linecap="round" d="M248 231 C247 274 252 314 242 348 C234 378 211 399 180 405 C151 410 127 398 114 376"/>
+  <circle cx="246" cy="169" r="25" fill="#F5F1E8"/>
+</svg>

@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jnote UI Prototype</title>
+  <style>
+    :root {
+      --bg: #f5f4ef;
+      --panel: #fbfaf7;
+      --panel-strong: #ffffff;
+      --ink: #202124;
+      --muted: #6b6f76;
+      --line: #dedbd2;
+      --line-strong: #c9c3b8;
+      --teal: #148f7a;
+      --teal-soft: #dff3ee;
+      --coral: #d75a4a;
+      --coral-soft: #f7e3de;
+      --indigo: #4058b9;
+      --indigo-soft: #e4e9fb;
+      --gold: #b98216;
+      --gold-soft: #f6ecd2;
+      --rose: #b04d6d;
+      --txt: #e8eef6;
+      --doc: #dfebff;
+      --md: #dff3e8;
+      --folder: #fff0d7;
+      --shadow: 0 12px 36px rgba(36, 34, 28, 0.12);
+      --mono: "JetBrains Mono", Consolas, "Cascadia Mono", monospace;
+      --ui: "Microsoft YaHei UI", "Segoe UI", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--ui);
+      letter-spacing: 0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .app-shell {
+      width: min(1480px, calc(100vw - 36px));
+      height: min(920px, calc(100vh - 36px));
+      min-width: 980px;
+      min-height: 640px;
+      display: grid;
+      grid-template-rows: 48px 42px 1fr 30px;
+      overflow: hidden;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .titlebar {
+      display: grid;
+      grid-template-columns: 248px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(251, 250, 247, 0.96);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      background: conic-gradient(from 210deg, var(--teal), var(--indigo), var(--coral), var(--gold), var(--teal));
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .brand-name {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      line-height: 1.05;
+    }
+
+    .brand-name strong {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .brand-name span {
+      margin-top: 3px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding-right: 8px;
+      margin-right: 4px;
+      border-right: 1px solid var(--line);
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: #3f444a;
+      cursor: default;
+    }
+
+    .icon-btn:hover,
+    .icon-btn.active {
+      border-color: var(--line-strong);
+      background: #fff;
+      box-shadow: 0 4px 14px rgba(45, 42, 35, 0.08);
+    }
+
+    .icon-btn svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .search {
+      min-width: 250px;
+      max-width: 390px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      flex: 1 1 280px;
+      gap: 8px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .search svg {
+      width: 15px;
+      height: 15px;
+      stroke: var(--muted);
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .window-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-pill {
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 10px;
+      border: 1px solid #cde5de;
+      border-radius: 8px;
+      background: var(--teal-soft);
+      color: #0f6f60;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: #eeece6;
+      scrollbar-width: thin;
+    }
+
+    .tab {
+      height: 30px;
+      min-width: 142px;
+      max-width: 220px;
+      display: inline-grid;
+      grid-template-columns: 10px 1fr 20px;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+      padding: 0 7px 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #faf9f5;
+      color: #53575d;
+      font-size: 12px;
+    }
+
+    .tab.current {
+      border-color: #91cbbf;
+      background: #fff;
+      color: var(--ink);
+      box-shadow: inset 0 -2px 0 var(--teal);
+    }
+
+    .tab-kind {
+      width: 8px;
+      height: 8px;
+      border-radius: 3px;
+    }
+
+    .tab-kind.md {
+      background: var(--teal);
+    }
+
+    .tab-kind.txt {
+      background: #6c8fb4;
+    }
+
+    .tab-kind.doc {
+      background: var(--indigo);
+    }
+
+    .tab-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tab-close {
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .tab-close:hover {
+      background: #eee7df;
+      color: var(--coral);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 282px;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    .sidebar {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      grid-column: 2;
+      grid-row: 1;
+      border-left: 1px solid var(--line);
+      background: #f1f0ea;
+    }
+
+    .sidebar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #41454a;
+    }
+
+    .side-actions {
+      display: flex;
+      gap: 3px;
+    }
+
+    .tree {
+      overflow: auto;
+      padding: 10px 10px 18px;
+    }
+
+    .root-block {
+      margin-bottom: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.58);
+    }
+
+    .root-head {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      height: 34px;
+      padding: 0 9px;
+      border-bottom: 1px solid var(--line);
+      color: #3d4146;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .root-path {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tree-list {
+      padding: 6px;
+    }
+
+    .file-row {
+      min-height: 29px;
+      display: grid;
+      grid-template-columns: 18px 1fr auto;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 4px;
+      padding: 4px 7px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      color: #373b40;
+      font-size: 12px;
+    }
+
+    .file-row.active {
+      border-color: #8fcfc1;
+      background: #ffffff;
+      box-shadow: inset 3px 0 0 var(--teal);
+    }
+
+    .file-row.txt {
+      background: var(--txt);
+    }
+
+    .file-row.doc {
+      background: var(--doc);
+    }
+
+    .file-row.md {
+      background: var(--md);
+    }
+
+    .file-row.folder {
+      background: var(--folder);
+      font-weight: 700;
+    }
+
+    .file-row.indent {
+      margin-left: 18px;
+    }
+
+    .file-icon {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+    }
+
+    .file-icon svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .file-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-meta {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .workspace {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-column: 1;
+      grid-row: 1;
+      grid-template-rows: 1fr;
+      background: var(--panel-strong);
+    }
+
+    .editor {
+      min-width: 0;
+      overflow: auto;
+      padding: 24px 32px 48px;
+      background:
+        linear-gradient(90deg, rgba(32, 33, 36, 0.035) 1px, transparent 1px) 0 0 / 42px 42px,
+        #fffdfa;
+    }
+
+    .page {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .md-section {
+      margin: 0 0 18px;
+      padding: 14px;
+      border: 1px solid rgba(28, 28, 28, 0.06);
+      border-radius: 8px;
+    }
+
+    .md-section.teal {
+      background: var(--teal-soft);
+    }
+
+    .md-section.coral {
+      background: var(--coral-soft);
+    }
+
+    .md-section.indigo {
+      background: var(--indigo-soft);
+    }
+
+    .md-section.gold {
+      background: var(--gold-soft);
+    }
+
+    .md-heading {
+      display: grid;
+      grid-template-columns: 30px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 54px;
+      margin: 0 0 14px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(28, 28, 28, 0.06);
+    }
+
+    .md-section .md-heading {
+      background: rgba(255, 255, 255, 0.54);
+    }
+
+    .md-heading.teal {
+      background: var(--teal-soft);
+    }
+
+    .md-heading.coral {
+      background: var(--coral-soft);
+    }
+
+    .md-heading.indigo {
+      background: var(--indigo-soft);
+    }
+
+    .md-heading.gold {
+      background: var(--gold-soft);
+    }
+
+    .collapse {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.76);
+      color: #34383d;
+    }
+
+    .collapse svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .heading-copy h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.18;
+    }
+
+    .heading-copy p {
+      margin: 5px 0 0;
+      color: #65686f;
+      font-size: 12px;
+    }
+
+    .heading-tag {
+      padding: 4px 8px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .sub-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0 10px;
+      color: #26292d;
+    }
+
+    .sub-heading .marker {
+      width: 5px;
+      height: 22px;
+      border-radius: 4px;
+      background: var(--teal);
+    }
+
+    .sub-heading h2 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    .body-copy {
+      margin: 0 0 12px;
+      color: #42464c;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .body-copy a {
+      color: var(--indigo);
+      font-weight: 800;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(64, 88, 185, 0.35);
+    }
+
+    .todo-list {
+      display: grid;
+      gap: 7px;
+      margin: 12px 0 18px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .todo-list li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 9px;
+      align-items: start;
+      color: #3e4248;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .bullet {
+      width: 7px;
+      height: 7px;
+      margin-top: 9px;
+      border-radius: 50%;
+      background: var(--coral);
+      box-shadow: 0 0 0 4px rgba(215, 90, 74, 0.12);
+    }
+
+    .code-block {
+      overflow: hidden;
+      margin: 16px 0 20px;
+      border: 1px solid #d3d7df;
+      border-radius: 8px;
+      background: #1f2430;
+      box-shadow: 0 12px 28px rgba(17, 21, 30, 0.18);
+    }
+
+    .code-head {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: #252b38;
+      color: #b8c1d1;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .traffic {
+      display: flex;
+      gap: 6px;
+    }
+
+    .traffic i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #536071;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px 18px 18px;
+      overflow: auto;
+      color: #d8dee9;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.65;
+      tab-size: 2;
+    }
+
+    .kw {
+      color: #c792ea;
+      font-weight: 700;
+    }
+
+    .type {
+      color: #82aaff;
+    }
+
+    .fn {
+      color: #ffcb6b;
+    }
+
+    .str {
+      color: #c3e88d;
+    }
+
+    .num {
+      color: #f78c6c;
+    }
+
+    .comment {
+      color: #697386;
+      font-style: italic;
+    }
+
+    .inline-image {
+      width: min(520px, 100%);
+      display: grid;
+      grid-template-columns: 118px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      margin-top: 14px;
+      padding: 10px;
+      border: 1px solid #e1d6c6;
+      border-radius: 8px;
+      background: #fff7ea;
+    }
+
+    .image-preview {
+      height: 70px;
+      border-radius: 7px;
+      background:
+        linear-gradient(135deg, rgba(20, 143, 122, 0.28), transparent 55%),
+        linear-gradient(45deg, rgba(215, 90, 74, 0.22), transparent 60%),
+        #f3e3cd;
+      border: 1px solid rgba(185, 130, 22, 0.28);
+    }
+
+    .image-copy strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .image-copy span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tiny-key {
+      padding: 2px 5px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: #fff;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .statusbar {
+      display: grid;
+      grid-template-columns: 1fr auto 282px;
+      align-items: center;
+      gap: 12px;
+      padding: 0 12px;
+      border-top: 1px solid var(--line);
+      background: #eeece6;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .statusbar strong {
+      color: #3f444a;
+    }
+
+    .status-right {
+      display: flex;
+      gap: 14px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1120px) {
+      body {
+        padding: 0;
+      }
+
+      .app-shell {
+        width: 100vw;
+        height: 100vh;
+        min-width: 0;
+        min-height: 0;
+        border-radius: 0;
+        border: none;
+      }
+
+      .titlebar {
+        grid-template-columns: 210px 1fr auto;
+      }
+
+      .main {
+        grid-template-columns: minmax(0, 1fr) 236px;
+      }
+
+      .search {
+        min-width: 160px;
+      }
+
+      .statusbar {
+        grid-template-columns: 1fr 236px;
+      }
+
+      .status-right {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="titlebar">
+      <div class="brand">
+        <div class="brand-mark">J</div>
+        <div class="brand-name">
+          <strong>Jnote</strong>
+          <span>D:\Work\Knowledge\architecture-review.md</span>
+        </div>
+      </div>
+
+      <nav class="toolbar" aria-label="主工具栏">
+        <div class="tool-group">
+          <button class="icon-btn active" title="收起/展开侧边栏 Ctrl+B">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path></svg>
+          </button>
+          <button class="icon-btn" title="新建文件 Ctrl+N">
+            <svg viewBox="0 0 24 24"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path><path d="M14 2v5h5"></path><path d="M12 11v6"></path><path d="M9 14h6"></path></svg>
+          </button>
+          <button class="icon-btn" title="新建文件夹 Ctrl+Shift+N">
+            <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M12 11v6"></path><path d="M9 14h6"></path></svg>
+          </button>
+          <button class="icon-btn" title="保存">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
+          </button>
+        </div>
+
+        <div class="tool-group">
+          <button class="icon-btn" title="撤销 Ctrl+Z">
+            <svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-1"></path></svg>
+          </button>
+          <button class="icon-btn" title="重做 Ctrl+Y">
+            <svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"></path><path d="M20 9H10a6 6 0 0 0 0 12h1"></path></svg>
+          </button>
+          <button class="icon-btn" title="插入图片">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path></svg>
+          </button>
+        </div>
+
+        <div class="search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <span>查找当前文件 Ctrl+F</span>
+        </div>
+      </nav>
+
+      <div class="window-actions">
+        <span class="status-pill"><i class="dot"></i>已自动保存</span>
+      </div>
+    </header>
+
+    <section class="tabs" aria-label="打开的文件书签">
+      <div class="tab current" title="D:\Work\Knowledge\architecture-review.md">
+        <i class="tab-kind md"></i>
+        <span class="tab-name">architecture-review.md</span>
+        <span class="tab-close">×</span>
+      </div>
+      <div class="tab" title="C:\Users\Joel\Desktop\todo.txt">
+        <i class="tab-kind txt"></i>
+        <span class="tab-name">todo.txt</span>
+        <span class="tab-close">×</span>
+      </div>
+      <div class="tab" title="D:\Work\Meeting\release-plan.docx">
+        <i class="tab-kind doc"></i>
+        <span class="tab-name">release-plan.docx</span>
+        <span class="tab-close">×</span>
+      </div>
+      <div class="tab" title="D:\Work\Knowledge\sql-cheatsheet.md">
+        <i class="tab-kind md"></i>
+        <span class="tab-name">sql-cheatsheet.md</span>
+        <span class="tab-close">×</span>
+      </div>
+      <div class="tab" title="E:\Notes\Java\stream-api.md">
+        <i class="tab-kind md"></i>
+        <span class="tab-name">stream-api.md</span>
+        <span class="tab-close">×</span>
+      </div>
+      <div class="tab" title="C:\Docs\legacy-import.txt">
+        <i class="tab-kind txt"></i>
+        <span class="tab-name">legacy-import.txt</span>
+        <span class="tab-close">×</span>
+      </div>
+    </section>
+
+    <main class="main">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <span class="section-title">堆叠文件树</span>
+          <div class="side-actions">
+            <button class="icon-btn" title="打开顶级目录">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+            </button>
+            <button class="icon-btn" title="刷新">
+              <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2"></path><path d="M3 12A9 9 0 0 1 18.5 5.8"></path><path d="M18 2v5h5"></path><path d="M6 22v-5H1"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="tree">
+          <section class="root-block">
+            <div class="root-head">
+              <span class="file-icon"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg></span>
+              <span class="root-path">D:\Work\Knowledge</span>
+            </div>
+            <div class="tree-list">
+              <div class="file-row folder"><span class="file-icon"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></span><span class="file-name">image_architecture-review</span><span class="file-meta">img</span></div>
+              <div class="file-row md active"><span class="file-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M7 15V9l3 3 3-3v6"></path><path d="M17 9v6"></path></svg></span><span class="file-name">architecture-review.md</span><span class="file-meta">md</span></div>
+              <div class="file-row md"><span class="file-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M7 15V9l3 3 3-3v6"></path><path d="M17 9v6"></path></svg></span><span class="file-name">sql-cheatsheet.md</span><span class="file-meta">md</span></div>
+              <div class="file-row txt"><span class="file-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg></span><span class="file-name">migration-log.txt</span><span class="file-meta">txt</span></div>
+            </div>
+          </section>
+
+          <section class="root-block">
+            <div class="root-head">
+              <span class="file-icon"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg></span>
+              <span class="root-path">E:\Notes\Java</span>
+            </div>
+            <div class="tree-list">
+              <div class="file-row folder"><span class="file-icon"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></span><span class="file-name">spring</span><span class="file-meta">dir</span></div>
+              <div class="file-row md indent"><span class="file-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M7 15V9l3 3 3-3v6"></path><path d="M17 9v6"></path></svg></span><span class="file-name">stream-api.md</span><span class="file-meta">md</span></div>
+              <div class="file-row doc"><span class="file-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h6"></path></svg></span><span class="file-name">release-plan.docx</span><span class="file-meta">doc</span></div>
+            </div>
+          </section>
+
+          <section class="root-block">
+            <div class="root-head">
+              <span class="file-icon"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg></span>
+              <span class="root-path">C:\Users\Joel\Desktop</span>
+            </div>
+            <div class="tree-list">
+              <div class="file-row txt"><span class="file-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg></span><span class="file-name">todo.txt</span><span class="file-meta">txt</span></div>
+              <div class="file-row md"><span class="file-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M7 15V9l3 3 3-3v6"></path><path d="M17 9v6"></path></svg></span><span class="file-name">daily-review.md</span><span class="file-meta">md</span></div>
+            </div>
+          </section>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <article class="editor">
+          <div class="page">
+            <section class="md-section teal">
+              <div class="md-heading teal">
+                <span class="collapse" title="收起/展开标题">
+                  <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
+                </span>
+                <div class="heading-copy">
+                  <h1>服务拆分与边界</h1>
+                  <p>一级标题使用固定色轮播背景，折叠状态随页签记录。</p>
+                </div>
+                <span class="heading-tag">H1 · 展开</span>
+              </div>
+
+              <div class="sub-heading">
+                <span class="marker"></span>
+                <h2>接口契约</h2>
+              </div>
+              <p class="body-copy">保留 Markdown 的轻量写作体验，同时让阅读态拥有更清晰的分段。链接示例：<a href="#">https://example.com/api/spec</a>。</p>
+              <ul class="todo-list">
+                <li><span class="bullet"></span><span>通过 `- ` 识别无序标题或要点，并保持编辑区里的原始文本语义。</span></li>
+                <li><span class="bullet"></span><span>每个一级/二级标题折叠状态写入当前 Markdown 页签的本地记录。</span></li>
+              </ul>
+
+              <div class="code-block">
+                <div class="code-head">
+                  <span>java · syntax preview</span>
+                  <span class="traffic"><i></i><i></i><i></i></span>
+                </div>
+                <pre><span class="kw">public class</span> <span class="type">NoteParser</span> {
+  <span class="kw">private final</span> <span class="type">Pattern</span> heading = <span class="type">Pattern</span>.<span class="fn">compile</span>(<span class="str">"^(#{1,2})\\s+(.+)$"</span>);
+
+  <span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">Block</span>&gt; <span class="fn">parse</span>(<span class="type">String</span> markdown) {
+    <span class="comment">// code fences keep language metadata for highlighting</span>
+    <span class="kw">return</span> blocks.<span class="fn">stream</span>().<span class="fn">toList</span>();
+  }
+}</pre>
+              </div>
+            </section>
+
+            <section class="md-section coral">
+              <div class="md-heading coral">
+                <span class="collapse" title="收起/展开标题">
+                  <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"></path></svg>
+                </span>
+                <div class="heading-copy">
+                  <h1>图片与附件</h1>
+                  <p>折叠时保留标题行，正文收起并显示简短状态。</p>
+                </div>
+                <span class="heading-tag">H1 · 收起</span>
+              </div>
+
+              <div class="inline-image">
+                <div class="image-preview"></div>
+                <div class="image-copy">
+                  <strong>architecture-map.png</strong>
+                  <span>双击放大查看 · 存放于 image_architecture-review</span>
+                </div>
+                <button class="icon-btn" title="打开图片">
+                  <svg viewBox="0 0 24 24"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+                </button>
+              </div>
+            </section>
+
+            <section class="md-section indigo">
+              <div class="md-heading indigo">
+                <span class="collapse" title="收起/展开标题">
+                  <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
+                </span>
+                <div class="heading-copy">
+                  <h1>数据库访问</h1>
+                  <p>SQL、Python、Java 等代码块使用多色语法渲染。</p>
+                </div>
+                <span class="heading-tag">H1 · 展开</span>
+              </div>
+
+              <div class="code-block">
+                <div class="code-head">
+                  <span>sql · syntax preview</span>
+                  <span class="traffic"><i></i><i></i><i></i></span>
+                </div>
+                <pre><span class="kw">select</span> n.id, n.title, n.updated_at
+<span class="kw">from</span> notes n
+<span class="kw">where</span> n.path <span class="kw">like</span> <span class="str">'D:%Knowledge%'</span>
+<span class="kw">order by</span> n.updated_at <span class="kw">desc</span>
+<span class="kw">limit</span> <span class="num">10</span>;</pre>
+              </div>
+            </section>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="statusbar">
+      <span><strong>3</strong> 个顶级目录 · 最近目录上限 10</span>
+      <span>Ln 42, Col 18 · Markdown 折叠状态已记录 · 文件监听中</span>
+      <span class="status-right"><span>JavaFX 目标实现</span><span>UTF-8</span><span>CRLF</span></span>
+    </footer>
+  </div>
+</body>
+</html>
