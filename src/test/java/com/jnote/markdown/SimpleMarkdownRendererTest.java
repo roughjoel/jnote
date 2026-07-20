@@ -8,6 +8,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -190,6 +191,23 @@ class SimpleMarkdownRendererTest {
         assertTrue(html.contains("window.requestAnimationFrame(animate)"));
         assertTrue(html.contains("{ passive: false, capture: true }"));
         assertTrue(html.contains("event.preventDefault()"));
+    }
+
+    @Test
+    void rendersPersistentFoldControlsForFirstAndSecondLevelHeadings() {
+        OpenDocument document = new OpenDocument(
+                Path.of("D:/Jnote/notes/folds.md"),
+                NoteFormat.MARKDOWN,
+                "# Overview\nintro\n## Details\nbody\n# Next");
+
+        String html = renderer.render(document, Set.of("1|Overview|0", "2|Overview|Details|0"));
+
+        assertTrue(html.contains("data-fold-key=\"1|Overview|0\" data-folded=\"true\""));
+        assertTrue(html.contains("data-fold-key=\"2|Overview|Details|0\" data-folded=\"true\""));
+        assertTrue(html.contains("function refreshHeadingFolds()"));
+        assertTrue(html.contains("function toggleHeadingFold(toggle)"));
+        assertTrue(html.contains("window.javaBridge.setHeadingCollapsed(key, collapsed)"));
+        assertTrue(MarkdownEditorAssets.css().contains(".heading-fold-hidden { display: none !important; }"));
     }
 
     @Test

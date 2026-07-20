@@ -154,7 +154,11 @@ public final class JnoteApplication extends Application {
     private boolean restoringState;
     private long treeRenderGeneration;
 
-    private record RestoreRequest(List<Path> recentRoots, List<Path> openFiles, Path activeFile) {
+    private record RestoreRequest(
+            List<Path> recentRoots,
+            List<Path> openFiles,
+            Path activeFile,
+            Map<Path, Set<String>> collapsedHeadings) {
     }
 
     private record LoadedDocument(OpenDocument document, String renderedHtml) {
@@ -620,10 +624,14 @@ public final class JnoteApplication extends Application {
 
     private CompletableFuture<PrimaryRestore> beginRestoreState() {
         restoringState = true;
+        Map<Path, Set<String>> collapsedHeadings = new LinkedHashMap<>();
+        appState.collapsedHeadings().forEach((path, headings) ->
+                collapsedHeadings.put(path, Set.copyOf(headings)));
         RestoreRequest request = new RestoreRequest(
                 List.copyOf(appState.recentRoots()),
                 List.copyOf(appState.openFiles()),
-                appState.activeFile());
+                appState.activeFile(),
+                Map.copyOf(collapsedHeadings));
         return CompletableFuture.supplyAsync(() -> preparePrimaryRestore(request));
     }
 
@@ -655,7 +663,9 @@ public final class JnoteApplication extends Application {
         for (Path path : loadOrder) {
             try {
                 OpenDocument document = new OpenDocument(path, NoteFormat.fromPath(path), NoteIO.read(path));
-                primary = new LoadedDocument(document, renderer.render(document));
+                primary = new LoadedDocument(
+                        document,
+                        renderer.render(document, request.collapsedHeadings().getOrDefault(path, Set.of())));
                 break;
             } catch (IOException | RuntimeException ignored) {
                 // A stale recent file should not delay or block application startup.
@@ -923,6 +933,14 @@ public final class JnoteApplication extends Application {
         selectedTreeRoot = remapPath(selectedTreeRoot, source, target);
         selectedDirectory = remapPath(selectedDirectory, source, target);
         appState.setActiveFile(remapPath(appState.activeFile(), source, target));
+
+        Map<Path, Set<String>> remappedHeadingState = new LinkedHashMap<>();
+        appState.collapsedHeadings().forEach((path, headings) -> {
+            Path movedPath = remapPath(path, source, target);
+            remappedHeadingState.computeIfAbsent(movedPath, ignored -> new LinkedHashSet<>()).addAll(headings);
+        });
+        appState.collapsedHeadings().clear();
+        appState.collapsedHeadings().putAll(remappedHeadingState);
     }
 
     private Path remapPath(Path path, Path source, Path target) {
@@ -980,7 +998,7 @@ public final class JnoteApplication extends Application {
             return;
         }
         loadingEditor = true;
-        webEngine.loadContent(renderer.render(activeDocument));
+        webEngine.loadContent(renderDocument(activeDocument));
         loadingEditor = false;
     }
 
@@ -1015,6 +1033,8 @@ public final class JnoteApplication extends Application {
             }
             deleteRecursively(target);
             appState.recentRoots().removeIf(path -> path.toAbsolutePath().normalize().equals(target));
+            appState.collapsedHeadings().keySet().removeIf(path ->
+                    path.toAbsolutePath().normalize().startsWith(target));
             expandedDirectories.removeIf(path -> path.toAbsolutePath().normalize().startsWith(target));
             if (selectedTreePath != null && selectedTreePath.toAbsolutePath().normalize().startsWith(target)) {
                 selectedTreePath = null;
@@ -1301,7 +1321,7 @@ public final class JnoteApplication extends Application {
         appState.setActiveFile(document.path());
         revealFileInExistingRoot(document.path());
         loadingEditor = true;
-        webEngine.loadContent(preparedHtml == null ? renderer.render(document) : preparedHtml);
+        webEngine.loadContent(preparedHtml == null ? renderDocument(document) : preparedHtml);
         loadingEditor = false;
         renderTabs();
         renderFileTree();
@@ -1857,6 +1877,10 @@ public final class JnoteApplication extends Application {
         }
     }
 
+    private String renderDocument(OpenDocument document) {
+        return renderer.render(document, appState.collapsedHeadings(document.path()));
+    }
+
     private void resetEditorUserChanges() {
         execEditor("window.jnoteResetUserChanges && window.jnoteResetUserChanges()");
     }
@@ -2123,6 +2147,24 @@ public final class JnoteApplication extends Application {
                 mark.run();
             } else {
                 Platform.runLater(mark);
+            }
+        }
+
+        public void setHeadingCollapsed(String headingKey, boolean collapsed) {
+            OpenDocument document = activeDocument;
+            if (document == null || document.format() != NoteFormat.MARKDOWN
+                    || headingKey == null || headingKey.isBlank()) {
+                return;
+            }
+            Path documentPath = document.path();
+            Runnable update = () -> {
+                appState.setHeadingCollapsed(documentPath, headingKey, collapsed);
+                persistState();
+            };
+            if (Platform.isFxApplicationThread()) {
+                update.run();
+            } else {
+                Platform.runLater(update);
             }
         }
 

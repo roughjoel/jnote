@@ -24,6 +24,8 @@ class StateStoreTest {
         expected.openFiles().add(directory.resolve("notes/one.md"));
         expected.setActiveFile(directory.resolve("notes/one.md"));
         expected.setWindowSize(1280, 800);
+        expected.setHeadingCollapsed(directory.resolve("notes/one.md"), "1|Overview|0", true);
+        expected.setHeadingCollapsed(directory.resolve("notes/one.md"), "2|Overview|Details|0", true);
 
         store.save(expected);
         AppState actual = store.load();
@@ -31,6 +33,9 @@ class StateStoreTest {
         assertEquals(expected.recentRoots(), actual.recentRoots());
         assertEquals(expected.openFiles(), actual.openFiles());
         assertEquals(expected.activeFile(), actual.activeFile());
+        assertEquals(
+                expected.collapsedHeadings(directory.resolve("notes/one.md")),
+                actual.collapsedHeadings(directory.resolve("notes/one.md")));
         assertEquals(1280, actual.windowWidth());
         assertEquals(800, actual.windowHeight());
         try (var files = Files.list(stateFile.getParent())) {
@@ -49,6 +54,9 @@ class StateStoreTest {
                 activeFile=bad\\u0000path
                 window.width=NaN
                 window.height=Infinity
+                collapsedFile.count=999999999
+                collapsedFile.0.path=valid.md
+                collapsedFile.0.heading.count=not-a-number
                 """);
 
         AppState state = new StateStore(stateFile).load();
@@ -59,5 +67,6 @@ class StateStoreTest {
         assertNull(state.activeFile());
         assertEquals(0, state.windowWidth());
         assertEquals(0, state.windowHeight());
+        assertTrue(state.collapsedHeadings().isEmpty());
     }
 }

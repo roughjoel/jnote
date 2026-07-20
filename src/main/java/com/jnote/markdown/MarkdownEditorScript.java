@@ -436,6 +436,86 @@ final class MarkdownEditorScript {
                   function removeSectionClasses(block) {
                     block.classList.remove('in-section', 'section-teal', 'section-coral', 'section-indigo', 'section-gold');
                   }
+
+                  function normalizedHeadingTitle(heading) {
+                    return plain(heading).trim().replace(/\s+/g, ' ');
+                  }
+
+                  function ensureHeadingFoldControls() {
+                    if (!editor) return;
+                    const occurrences = Object.create(null);
+                    let currentH1Title = '';
+                    Array.from(editor.querySelectorAll('.heading-one, .heading-two')).forEach(function (heading) {
+                      const level = heading.classList.contains('heading-one') ? 1 : 2;
+                      const title = normalizedHeadingTitle(heading);
+                      const identity = level === 1
+                        ? '1|' + encodeURIComponent(title)
+                        : '2|' + encodeURIComponent(currentH1Title) + '|' + encodeURIComponent(title);
+                      const occurrence = occurrences[identity] || 0;
+                      occurrences[identity] = occurrence + 1;
+                      if (!heading.getAttribute('data-fold-key')) {
+                        heading.setAttribute('data-fold-key', identity + '|' + occurrence);
+                      }
+                      if (level === 1) currentH1Title = title;
+                      let toggle = heading.querySelector('.heading-fold-toggle');
+                      if (!toggle) {
+                        toggle = document.createElement('button');
+                        toggle.type = 'button';
+                        toggle.className = 'heading-fold-toggle';
+                        toggle.setAttribute('contenteditable', 'false');
+                        toggle.setAttribute('aria-label', level === 1 ? '折叠或展开一级标题' : '折叠或展开二级标题');
+                        toggle.title = '折叠/展开';
+                        heading.insertBefore(toggle, heading.firstChild);
+                      }
+                    });
+                  }
+
+                  function refreshHeadingFolds() {
+                    if (!editor) return;
+                    ensureHeadingFoldControls();
+                    let hiddenByH1 = false;
+                    let hiddenByH2 = false;
+                    Array.from(editor.children).forEach(function (block) {
+                      const h1 = block.classList.contains('heading-one');
+                      const h2 = block.classList.contains('heading-two');
+                      if (h1) {
+                        hiddenByH1 = false;
+                        hiddenByH2 = false;
+                      } else if (h2 && !hiddenByH1) {
+                        hiddenByH2 = false;
+                      }
+
+                      const hidden = !h1 && (hiddenByH1 || (!h2 && hiddenByH2));
+                      block.classList.toggle('heading-fold-hidden', hidden);
+
+                      if (h1 || h2) {
+                        const folded = block.getAttribute('data-folded') === 'true';
+                        block.classList.toggle('heading-folded', folded);
+                        const toggle = block.querySelector('.heading-fold-toggle');
+                        if (toggle) toggle.setAttribute('aria-expanded', String(!folded));
+                        if (!hidden) {
+                          if (h1) hiddenByH1 = folded;
+                          else hiddenByH2 = folded;
+                        }
+                      }
+                    });
+                  }
+
+                  function toggleHeadingFold(toggle) {
+                    const heading = toggle && toggle.closest
+                      ? toggle.closest('.heading-one, .heading-two')
+                      : null;
+                    if (!heading) return;
+                    const collapsed = heading.getAttribute('data-folded') !== 'true';
+                    if (collapsed) heading.setAttribute('data-folded', 'true');
+                    else heading.removeAttribute('data-folded');
+                    refreshHeadingFolds();
+                    const key = heading.getAttribute('data-fold-key') || '';
+                    if (key && window.javaBridge && window.javaBridge.setHeadingCollapsed) {
+                      window.javaBridge.setHeadingCollapsed(key, collapsed);
+                    }
+                  }
+
                   function refreshSections() {
                     if (!editor) return;
                     const colors = ['section-teal', 'section-coral', 'section-indigo', 'section-gold'];
@@ -449,6 +529,7 @@ final class MarkdownEditorScript {
                       }
                       if (active && block.classList.contains('md-block')) block.classList.add('in-section', active);
                     });
+                    refreshHeadingFolds();
                   }
 
                   function replaceBlock(block, replacements, focusUnit, offset) {
@@ -874,6 +955,14 @@ final class MarkdownEditorScript {
                     }, true);
 
                     document.addEventListener('keydown', function (event) {
+                      const foldToggle = event.target.closest && event.target.closest('.heading-fold-toggle');
+                      const foldKey = normalizedKey(event);
+                      if (foldToggle && (foldKey === 'Enter' || foldKey === 'Space')) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleHeadingFold(foldToggle);
+                        return;
+                      }
                       if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
                       const unit = currentUnit();
                       if (!unit) return;
@@ -905,6 +994,13 @@ final class MarkdownEditorScript {
                     }, true);
 
                     document.addEventListener('click', function (event) {
+                      const foldToggle = event.target.closest && event.target.closest('.heading-fold-toggle');
+                      if (foldToggle) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleHeadingFold(foldToggle);
+                        return;
+                      }
                       const link = event.target.closest && event.target.closest('a');
                       if (!link) return;
                       event.preventDefault();

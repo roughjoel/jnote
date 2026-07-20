@@ -4,9 +4,14 @@ import com.jnote.io.NoteIO;
 import com.jnote.model.NoteFormat;
 import com.jnote.model.OpenDocument;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,8 +25,12 @@ public final class SimpleMarkdownRenderer {
     private static final Pattern URL = Pattern.compile("(https?://[^\\s<]+)");
 
     public String render(OpenDocument document) {
+        return render(document, Set.of());
+    }
+
+    public String render(OpenDocument document, Set<String> collapsedHeadings) {
         String body = document.format() == NoteFormat.MARKDOWN
-                ? renderMarkdown(document)
+                ? renderMarkdown(document, collapsedHeadings == null ? Set.of() : Set.copyOf(collapsedHeadings))
                 : renderPlain(document);
         return """
                 <!DOCTYPE html>
@@ -58,8 +67,8 @@ public final class SimpleMarkdownRenderer {
                 """;
     }
 
-    private String renderMarkdown(OpenDocument document) {
-        RenderContext context = new RenderContext(document);
+    private String renderMarkdown(OpenDocument document, Set<String> collapsedHeadings) {
+        RenderContext context = new RenderContext(document, collapsedHeadings);
         String[] lines = document.content()
                 .replace("\r\n", "\n")
                 .replace('\r', '\n')
@@ -159,19 +168,30 @@ public final class SimpleMarkdownRenderer {
 
     private final class RenderContext {
         private final OpenDocument document;
+        private final Set<String> collapsedHeadings;
+        private final Map<String, Integer> headingOccurrences = new HashMap<>();
         private final StringBuilder html = new StringBuilder();
         private int h1Count;
         private String currentSectionColor;
+        private String currentH1Title = "";
 
-        private RenderContext(OpenDocument document) {
+        private RenderContext(OpenDocument document, Set<String> collapsedHeadings) {
             this.document = document;
+            this.collapsedHeadings = collapsedHeadings;
         }
 
         void appendHeading(int level, String title) {
+            String normalizedTitle = normalizeHeadingTitle(title);
+            String identity = level == 1
+                    ? "1|" + escapeHeadingKeyPart(normalizedTitle)
+                    : "2|" + escapeHeadingKeyPart(currentH1Title) + "|" + escapeHeadingKeyPart(normalizedTitle);
+            int occurrence = headingOccurrences.merge(identity, 1, Integer::sum) - 1;
+            String headingKey = identity + "|" + occurrence;
             String marker = level == 1 ? "# " : "## ";
             String tag = level == 1 ? "h1" : "h2";
             String cssClass;
             if (level == 1) {
+                currentH1Title = normalizedTitle;
                 currentSectionColor = HEADING_COLORS[h1Count % HEADING_COLORS.length];
                 h1Count++;
                 cssClass = "heading-one in-section section-" + currentSectionColor;
@@ -181,9 +201,27 @@ public final class SimpleMarkdownRenderer {
             html.append('<').append(tag)
                     .append(" class=\"").append(cssClass).append(" md-block\"")
                     .append(" data-marker=\"").append(HtmlEscaper.escape(marker)).append("\"")
+                    .append(" data-fold-key=\"").append(HtmlEscaper.escape(headingKey)).append("\"")
+                    .append(collapsedHeadings.contains(headingKey) ? " data-folded=\"true\"" : "")
                     .append('>')
                     .append(HtmlEscaper.escape(title))
                     .append("</").append(tag).append('>');
+        }
+
+        private String normalizeHeadingTitle(String title) {
+            return title == null
+                    ? ""
+                    : title.replace('\u00a0', ' ').replace('\u3000', ' ').trim().replaceAll("\\s+", " ");
+        }
+
+        private String escapeHeadingKeyPart(String value) {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8)
+                    .replace("+", "%20")
+                    .replace("%21", "!")
+                    .replace("%27", "'")
+                    .replace("%28", "(")
+                    .replace("%29", ")")
+                    .replace("%7E", "~");
         }
 
         void appendParagraph(String text) {

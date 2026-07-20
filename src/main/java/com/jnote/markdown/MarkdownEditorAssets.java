@@ -72,9 +72,10 @@ final class MarkdownEditorAssets {
                   background: var(--section-bg);
                 }
                 .heading-one {
+                  position: relative;
                   margin: 22px -10px 0;
                   min-height: 1.25em;
-                  padding: 12px 14px;
+                  padding: 12px 14px 12px 44px;
                   border-radius: 7px 7px 0 0;
                   color: #202124;
                   font-size: 24px;
@@ -83,9 +84,10 @@ final class MarkdownEditorAssets {
                 }
                 .heading-one:first-child { margin-top: 0; }
                 .heading-two {
+                  position: relative;
                   margin: 0;
                   min-height: 1.2em;
-                  padding: 12px 14px 8px;
+                  padding: 12px 14px 8px 44px;
                   border-radius: 0;
                   background: var(--section-bg, rgba(223, 243, 238, 0.66));
                   color: #30343a;
@@ -93,6 +95,42 @@ final class MarkdownEditorAssets {
                   font-weight: 900;
                   line-height: 1.3;
                 }
+                .heading-fold-toggle {
+                  position: absolute;
+                  left: 13px;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  width: 22px;
+                  height: 22px;
+                  padding: 0;
+                  border: 0;
+                  border-radius: 5px;
+                  outline: none;
+                  background: transparent;
+                  color: var(--section-accent, #596270);
+                  cursor: pointer;
+                }
+                .heading-fold-toggle::before {
+                  content: "";
+                  position: absolute;
+                  left: 7px;
+                  top: 6px;
+                  width: 7px;
+                  height: 7px;
+                  border-right: 2px solid currentColor;
+                  border-bottom: 2px solid currentColor;
+                  transform: rotate(45deg);
+                  transition: transform 120ms ease, top 120ms ease;
+                }
+                .heading-folded > .heading-fold-toggle::before {
+                  top: 7px;
+                  transform: rotate(-45deg);
+                }
+                .heading-fold-toggle:hover,
+                .heading-fold-toggle:focus-visible {
+                  background: rgba(32, 33, 36, 0.08);
+                }
+                .heading-fold-hidden { display: none !important; }
                 .body-copy {
                   min-height: 1.8em;
                   margin: 0 0 4px;
