@@ -314,6 +314,16 @@
     -fx-border-color: transparent transparent -jnote-line transparent;
 }
 
+.root-head.drag-before {
+    -fx-border-color: -jnote-teal transparent -jnote-line transparent;
+    -fx-border-width: 2 0 1 0;
+}
+
+.root-head.drag-after {
+    -fx-border-color: transparent transparent -jnote-teal transparent;
+    -fx-border-width: 0 0 2 0;
+}
+
 .root-head.selected {
     -fx-background-color: white;
     -fx-background-radius: 8 8 0 0;
@@ -323,6 +333,27 @@
     -fx-text-fill: #3d4146;
     -fx-font-size: 12px;
     -fx-font-weight: 900;
+}
+
+.root-drag-handle {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-cursor: move;
+}
+
+.root-drag-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -jnote-muted;
+    -fx-stroke-width: 2.2;
+    -fx-stroke-line-cap: round;
+}
+
+.root-drag-handle:hover {
+    -fx-background-color: -jnote-teal-soft;
+}
+
+.root-drag-handle:hover .root-drag-icon {
+    -fx-stroke: -jnote-teal;
 }
 
 .tree-list {

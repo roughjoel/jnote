@@ -20,6 +20,37 @@ public final class AppState {
         return recentRoots;
     }
 
+    public boolean moveRecentRoot(Path source, Path target, boolean placeAfterTarget) {
+        int sourceIndex = indexOfRecentRoot(source);
+        int targetIndex = indexOfRecentRoot(target);
+        if (sourceIndex < 0 || targetIndex < 0 || sourceIndex == targetIndex) {
+            return false;
+        }
+
+        List<Path> previousOrder = List.copyOf(recentRoots);
+        Path moved = recentRoots.remove(sourceIndex);
+        if (sourceIndex < targetIndex) {
+            targetIndex--;
+        }
+        int insertionIndex = placeAfterTarget ? targetIndex + 1 : targetIndex;
+        recentRoots.add(insertionIndex, moved);
+        return !recentRoots.equals(previousOrder);
+    }
+
+    private int indexOfRecentRoot(Path root) {
+        if (root == null) {
+            return -1;
+        }
+        Path normalized = root.toAbsolutePath().normalize();
+        for (int i = 0; i < recentRoots.size(); i++) {
+            Path candidate = recentRoots.get(i);
+            if (candidate != null && candidate.toAbsolutePath().normalize().equals(normalized)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public List<Path> openFiles() {
         return openFiles;
     }

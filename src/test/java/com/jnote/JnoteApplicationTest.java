@@ -41,4 +41,11 @@ class JnoteApplicationTest {
         assertSame(javafxImage, selected);
         assertTrue(javafxDecoderCalled.get());
     }
+
+    @Test
+    void directoryShortPressTogglesButLongPressAndDragOnlySelect() {
+        assertTrue(JnoteApplication.shouldToggleDirectory(349_999_999L, true));
+        assertFalse(JnoteApplication.shouldToggleDirectory(350_000_000L, true));
+        assertFalse(JnoteApplication.shouldToggleDirectory(100_000_000L, false));
+    }
 }

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -68,5 +69,20 @@ class StateStoreTest {
         assertEquals(0, state.windowWidth());
         assertEquals(0, state.windowHeight());
         assertTrue(state.collapsedHeadings().isEmpty());
+    }
+
+    @Test
+    void movesRecentRootsBeforeOrAfterADropTarget() {
+        AppState state = new AppState();
+        Path first = directory.resolve("first");
+        Path second = directory.resolve("second");
+        Path third = directory.resolve("third");
+        state.recentRoots().addAll(List.of(first, second, third));
+
+        assertTrue(state.moveRecentRoot(first, second, true));
+        assertEquals(List.of(second, first, third), state.recentRoots());
+
+        assertTrue(state.moveRecentRoot(third, second, false));
+        assertEquals(List.of(third, second, first), state.recentRoots());
     }
 }

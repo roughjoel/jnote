@@ -29,6 +29,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -36,6 +37,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -89,6 +91,9 @@ public final class JnoteApplication extends Application {
     private static final double SIDEBAR_MIN_WIDTH = 220;
     private static final double SIDEBAR_MAX_WIDTH = 520;
     private static final double TREE_INDENT_WIDTH = 18.0;
+    private static final long DIRECTORY_LONG_PRESS_NANOS = 350_000_000L;
+    private static final String ICON_DRAG_HANDLE =
+            "M5.5 7 L9 3.5 L12.5 7 M5.5 11 L9 14.5 L12.5 11";
     private static final DateTimeFormatter PASTE_IMAGE_NAME = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
     private static final List<String> APPLICATION_ICONS = List.of(
             "/com/jnote/images/jnote-app-icon-16.png",
@@ -153,6 +158,7 @@ public final class JnoteApplication extends Application {
     private double windowResizeStartHeight;
     private boolean restoringState;
     private long treeRenderGeneration;
+    private Path draggedTreeRoot;
 
     private record RestoreRequest(
             List<Path> recentRoots,
@@ -1128,18 +1134,17 @@ public final class JnoteApplication extends Application {
             VBox rootBlock = new VBox();
             rootBlock.getStyleClass().add("root-block");
             Label icon = new Label(expandedDirectories.contains(normalizedRoot) ? "▾" : "▸");
-            HBox head = new HBox(7, icon, compactLabel(rootPath.toString(), "root-path"));
+            Label rootLabel = compactLabel(rootPath.toString(), "root-path");
+            rootLabel.setMinWidth(0);
+            HBox.setHgrow(rootLabel, Priority.ALWAYS);
+            StackPane dragHandle = rootDragHandle();
+            HBox head = new HBox(7, icon, rootLabel, dragHandle);
             head.getStyleClass().add("root-head");
             if (normalizedRoot.equals(selectedTreePath)) {
                 head.getStyleClass().add("selected");
             }
-            head.setOnMouseClicked(event -> {
-                selectedTreePath = normalizedRoot;
-                selectedTreeRoot = normalizedRoot;
-                selectedDirectory = normalizedRoot;
-                toggleExpanded(normalizedRoot);
-                renderFileTree();
-            });
+            installDirectoryInteraction(head, normalizedRoot, normalizedRoot);
+            installRootReordering(head, normalizedRoot);
             VBox list = new VBox();
             list.getStyleClass().add("tree-list");
             if (expandedDirectories.contains(normalizedRoot)) {
@@ -1150,6 +1155,111 @@ public final class JnoteApplication extends Application {
         }
         treeStatus.setText(count + " 个顶级目录 · 最近目录上限 10");
         Platform.runLater(() -> restoreTreeScrollOffset(renderGeneration, scrollOffset));
+    }
+
+    private StackPane rootDragHandle() {
+        SVGPath dots = new SVGPath();
+        dots.setContent(ICON_DRAG_HANDLE);
+        dots.getStyleClass().add("root-drag-icon");
+        StackPane handle = new StackPane(dots);
+        handle.getStyleClass().add("root-drag-handle");
+        handle.setMinSize(22, 24);
+        handle.setPrefSize(22, 24);
+        handle.setMaxSize(22, 24);
+        Tooltip.install(handle, new Tooltip("拖动以调整顶级目录顺序"));
+        return handle;
+    }
+
+    private void installDirectoryInteraction(HBox node, Path rootPath, Path directory) {
+        long[] pressedAt = {0L};
+        node.setOnMousePressed(event -> {
+            if (event.getButton() != MouseButton.PRIMARY) {
+                return;
+            }
+            pressedAt[0] = System.nanoTime();
+            selectedTreePath = directory;
+            selectedTreeRoot = rootPath;
+            selectedDirectory = directory;
+        });
+        node.setOnMouseReleased(event -> {
+            if (event.getButton() != MouseButton.PRIMARY || pressedAt[0] == 0L) {
+                return;
+            }
+            long pressDuration = System.nanoTime() - pressedAt[0];
+            pressedAt[0] = 0L;
+            if (shouldToggleDirectory(pressDuration, event.isStillSincePress())) {
+                toggleExpanded(directory);
+            }
+            renderFileTree();
+            event.consume();
+        });
+    }
+
+    static boolean shouldToggleDirectory(long pressDurationNanos, boolean stillSincePress) {
+        return stillSincePress && pressDurationNanos < DIRECTORY_LONG_PRESS_NANOS;
+    }
+
+    private void installRootReordering(HBox head, Path rootPath) {
+        head.setOnDragDetected(event -> {
+            if (event.getButton() != MouseButton.PRIMARY || appState.recentRoots().size() < 2) {
+                return;
+            }
+            draggedTreeRoot = rootPath;
+            ClipboardContent content = new ClipboardContent();
+            content.putString(rootPath.toString());
+            head.startDragAndDrop(TransferMode.MOVE).setContent(content);
+            event.consume();
+        });
+        head.setOnDragOver(event -> {
+            if (!isRootReorderTarget(rootPath)) {
+                return;
+            }
+            event.acceptTransferModes(TransferMode.MOVE);
+            updateRootDropIndicator(head, event.getY());
+            event.consume();
+        });
+        head.setOnDragEntered(event -> {
+            if (isRootReorderTarget(rootPath)) {
+                updateRootDropIndicator(head, event.getY());
+            }
+        });
+        head.setOnDragExited(event -> clearRootDropIndicator(head));
+        head.setOnDragDropped(event -> {
+            if (!isRootReorderTarget(rootPath)) {
+                event.setDropCompleted(false);
+                return;
+            }
+            boolean placeAfterTarget = event.getY() >= head.getHeight() / 2;
+            boolean moved = appState.moveRecentRoot(draggedTreeRoot, rootPath, placeAfterTarget);
+            draggedTreeRoot = null;
+            clearRootDropIndicator(head);
+            event.setDropCompleted(true);
+            if (moved) {
+                persistState();
+            }
+            renderFileTree();
+            event.consume();
+        });
+        head.setOnDragDone(event -> {
+            if (draggedTreeRoot == null) {
+                return;
+            }
+            draggedTreeRoot = null;
+            renderFileTree();
+        });
+    }
+
+    private boolean isRootReorderTarget(Path targetRoot) {
+        return draggedTreeRoot != null && !draggedTreeRoot.equals(targetRoot);
+    }
+
+    private void updateRootDropIndicator(HBox head, double y) {
+        clearRootDropIndicator(head);
+        head.getStyleClass().add(y < head.getHeight() / 2 ? "drag-before" : "drag-after");
+    }
+
+    private void clearRootDropIndicator(HBox head) {
+        head.getStyleClass().removeAll("drag-before", "drag-after");
     }
 
     private double treeScrollOffset() {
@@ -1223,17 +1333,15 @@ public final class JnoteApplication extends Application {
         if (path.equals(selectedTreePath)) {
             row.getStyleClass().add("selected");
         }
-        row.setOnMouseClicked(event -> {
-            selectedTreePath = path;
-            selectedTreeRoot = rootPath;
-            if (directory) {
-                selectedDirectory = path;
-                toggleExpanded(path);
-                renderFileTree();
-            } else if (event.getClickCount() >= 1) {
+        if (directory) {
+            installDirectoryInteraction(row, rootPath, path);
+        } else {
+            row.setOnMouseClicked(event -> {
+                selectedTreePath = path;
+                selectedTreeRoot = rootPath;
                 openFile(path, true);
-            }
-        });
+            });
+        }
         return row;
     }
 
